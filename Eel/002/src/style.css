@@ -1,0 +1,44 @@
+* {
+    background-color: aliceblue; 
+  }
+input {
+    background-color:white;
+    height: 100px;
+    width: 495px;
+    font-size: 80px;
+    color: black;
+    border:solid 2px;
+    text-align: center;
+  }
+
+.button {
+    background-color: white;
+    height: 120px;
+    width: 165px;
+    font-size: 50px;
+    position: relative;
+  }
+.func{
+    filter: grayscale(100%);
+}
+.func:disabled{
+    filter: brightness(50%);
+}
+#chrono{
+    text-align: center;
+    font-size: 80px;
+    margin-bottom: 2px;
+}
+
+#exist {
+    margin-top: 15px;
+    background-color: white;
+    width: 500px;
+    height: 500px;
+    overflow-y: auto;
+  
+  }
+
+#exist button{
+    height: 80px;
+}
