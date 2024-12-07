@@ -1,72 +1,35 @@
 import eel
-import eel.browsers
-from numpy import size
-import sounddevice
-import soundfile
 import os
-from datetime import datetime
+import sounddevice as sd
+import soundfile as sf
 import queue
 import threading
-import glob
 import shutil
-import sys
-import winsound
-import ctypes
+import glob
+from datetime import datetime
+import pygame 
 
-"----------------------Remove all wav file----------------------"
+pygame.mixer.init()
 
-
-def RemoveWav():
-    for bfile in os.listdir():
-        bfile = str(bfile)
-        if bfile.endswith('.wav'):
-            try:
-                os.remove(bfile)
-            except WindowsError:
-                if WindowsError == 5:
-                    os.chmod(bfile, 0o777)
-                    try:
-                        os.remove(bfile)
-                    except WindowsError:
-                        raise WindowsError
-                else:
-                    raise WindowsError
-    print("after remove")
-
-
-RemoveWav()
-
-"----------------------Check if Consigne LPF path exist----------------------"
-Consigne_Folder = os.path.isdir('Consigne LPF')
-if Consigne_Folder == True:
-    pass
-if Consigne_Folder == False:
-    os.mkdir('Consigne LPF')
-
-print("after check consigne lpf path")
+Consigne_Folder = 'Consigne LPF'
+if not os.path.isdir(Consigne_Folder):
+    os.mkdir(Consigne_Folder)
 
 audio_container = queue.Queue()
 eel.init("src")
 
-# to send data from python to javascript
-
 global num
-
 
 @eel.expose
 def get_Matricule(Mat):
     print("line 69 in python", Mat)
     Mat = str(Mat)
-    Database_file = open("DATABASE\\Matricules.txt", "r").read()
-    #print("line 73", Database_file)
-    #print("line 73", type(Database_file))
+    Database_file = open("DATABASE/Matricules.txt", "r").read()
     if Mat in Database_file:
         num = Mat
         print("exit")
         return True
-
     return False
-
 
 @eel.expose
 def Voice_Rec_Stop(x, y):
@@ -79,20 +42,20 @@ def Voice_Rec_Stop(x, y):
         try:
             global Recor_ding
             Recor_ding = True
-            with soundfile.SoundFile(dt_string, mode='w', samplerate=44100, channels=2) as file:
-                with sounddevice.InputStream(samplerate=44100, channels=2, callback=callback):
+            with sf.SoundFile(dt_string, mode='w', samplerate=44100, channels=2) as file:
+                with sd.InputStream(samplerate=44100, channels=2, callback=callback):
                     while Recor_ding == True:
                         print("recording")
                         file.write(audio_container.get())
-        except:
+        except Exception as e:
+            print(f"Error during recording: {e}")
             sys.exit(1)
+
     if x == "start":
-        winsound.PlaySound(None, winsound.SND_ASYNC)
-        RemoveWav()
         print("start recording")
         now = datetime.now()
         global dt_string
-        dt_string = now.strftime("%Y-%m-%d_%Hh%Mm%Ss("+num+").wav")
+        dt_string = now.strftime(f"%Y-%m-%d_%Hh%Mm%Ss({num}).wav")
         R = threading.Thread(target=Record_audio)
         R.start()
         global file_exists
@@ -108,14 +71,13 @@ def Voice_Rec_Stop(x, y):
     elif x == "listen":
         print("listen to recording")
         if os.path.isfile(dt_string):
-            winsound.PlaySound(
-                dt_string, winsound.SND_ASYNC | winsound.SND_ALIAS)
+            pygame.mixer.music.load(dt_string)
+            pygame.mixer.music.play()
 
     elif x == "save":
-        winsound.PlaySound(None, winsound.SND_ASYNC)
         print("save recording")
         source_dir = os.getcwd()
-        dst = os.getcwd() + '\\Consigne LPF'
+        dst = os.path.join(os.getcwd(), 'Consigne LPF')
         files = glob.iglob(os.path.join(source_dir, "*.wav"))
         for file in files:
             if os.path.isfile(file):
@@ -123,28 +85,22 @@ def Voice_Rec_Stop(x, y):
         if os.path.isfile(dt_string):
             os.remove(dt_string)
     else:
-        print("line 75")
-
+        print("Invalid command")
 
 @eel.expose
 def Exist():
-    print("From exist")
+    print("From Exist")
     List = []
-    for Soundfile in os.listdir("Consigne LPF"):
-        Soundfile = str(Soundfile)
+    for Soundfile in os.listdir(Consigne_Folder):
         if Soundfile.endswith(".wav"):
-            print(Soundfile)
             Soundfile = Soundfile.replace(".wav", "")
             List.append(Soundfile)
     return List
 
-
 @eel.expose
 def PlayHist(file):
     if os.path.isfile(file):
-        winsound.PlaySound(None, winsound.SND_ASYNC)
-        winsound.PlaySound(
-            file, winsound.SND_ASYNC | winsound.SND_ALIAS)
-
+        pygame.mixer.music.load(file)
+        pygame.mixer.music.play()
 
 eel.start("main.html", size=(540, 900))
